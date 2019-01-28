@@ -4,9 +4,11 @@ const EventEmitter = require('eventemitter3');
 const Telegram = require('./telegram');
 
 class Slimbot extends Telegram(EventEmitter) {
-  constructor(token, proxy) {
+  constructor(token, proxy, delay = 100) {
     super(token, proxy);
     this._offset = undefined;
+    this._active = false;
+    this._delay = delay;
   }
 
   _processUpdates(updates) {
@@ -45,6 +47,7 @@ class Slimbot extends Telegram(EventEmitter) {
   }
 
   startPolling(callback) {
+    this._active = true;
     return super.getUpdates(this._offset)
     .then(updates => {
       if (updates !== undefined) {
@@ -61,8 +64,13 @@ class Slimbot extends Telegram(EventEmitter) {
       }
     })
     .finally(() => {
-      setTimeout(() => this.startPolling(callback), 100);
+      if(this._active)
+        setTimeout(() => this.startPolling(callback), this._delay);
     });
+  }
+
+  stopPolling(){
+    this._active = false;
   }
 }
 
